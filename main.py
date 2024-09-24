@@ -1,6 +1,7 @@
 import sys
 import random
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
+from PyQt5.QtGui import QBrush, QColor
 from ball import Ball
 
 class MainWindow(QGraphicsView):
@@ -15,6 +16,8 @@ class MainWindow(QGraphicsView):
 
         self.setGeometry(2*self.unit_width, self.unit_height, 2*self.unit_width, 2*self.unit_height)
         self.setFixedSize(2*self.unit_width, 2*self.unit_height)
+
+        self.setBackgroundBrush(QColor(230, 230, 230))
         self.createScene()
 
     def createScene(self):
