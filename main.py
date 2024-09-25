@@ -1,5 +1,6 @@
 import sys
 import random
+import time
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtCore import QTimer
@@ -32,8 +33,7 @@ class MainWindow(QGraphicsView):
         for num in range(5):
             ball = Ball(random.randint(2.5*self.unit_width, 3.5*self.unit_width), 
                         random.randint(1.5*self.unit_height, 2.5*self.unit_height))
-            self.scene.addItem(ball)
-        # self.scene.setSceneRect(2*self.unit_width, self.unit_height, 2*self.unit_width, 2*self.unit_height)
+            self.scene.addItem(ball) # coordinate of ball is the same as coordinate of scene
         self.setScene(self.scene)
         view_rect = self.viewport().rect()
         scene_rect = self.mapToScene(view_rect).boundingRect()
@@ -53,10 +53,23 @@ class MainWindow(QGraphicsView):
                 self.addBall()
                 self.timeTooEmpty = 0
 
-    def addBall(self):
-        ball = Ball(random.randint(2.5*self.unit_width, 3.5*self.unit_width), 
-                        random.randint(1.5*self.unit_height, 2.5*self.unit_height))
+    def addBall(self, x = None, y = None):
+        if x is None:
+            x = random.randint(int(2.5*self.unit_width), int(3.5*self.unit_width))
+        if y is None:
+            y = random.randint(int(1.5*self.unit_height), int(2.5*self.unit_height))
+        ball = Ball(x, y)
         self.scene.addItem(ball)
+
+    def mousePressEvent(self, event):
+        if event.button() == 1:
+            item = self.itemAt(event.pos()) # look at coordinate of view
+            if isinstance(item, Ball) and item.contains(self.mapToScene(event.pos())): # map to scene look at coordinate of scene
+                super().mousePressEvent(event)
+            else:
+                self.addBall(self.mapToScene(event.pos()).x() - Ball.size/2, self.mapToScene(event.pos()).y() - Ball.size/2)
+        else:
+            super().mousePressEvent(event)
         
 if __name__ == '__main__':
     app = QApplication(sys.argv)

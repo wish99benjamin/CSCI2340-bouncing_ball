@@ -1,12 +1,15 @@
 import random
 import math
 import numpy as np
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsEllipseItem
-from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QGraphicsEllipseItem
+from PyQt5.QtCore import QTimer, QPointF
 from PyQt5.QtGui import QBrush, QColor, QPen
 
 
 class Ball(QGraphicsEllipseItem):
+    size = 20
+    unitSpeed = 3
+
     def __init__(self, x, y):
         super().__init__() 
 
@@ -14,9 +17,8 @@ class Ball(QGraphicsEllipseItem):
         self.x_dir, self.y_dir = self.initDirection()
 
         # init size and position
-        self.size = 20
         self.setRect(0, 0, self.size, self.size)
-        self.setPos(x,y)
+        self.setPos(x, y)
 
         # init life(color) and other style
         self.life = min(int(np.random.exponential(400)), 1000)
@@ -33,8 +35,8 @@ class Ball(QGraphicsEllipseItem):
         self.timer.start(50)
 
     def initDirection(self):
-        x_dir = random.random() * 3
-        y_dir = math.sqrt(9 - pow(x_dir, 2))
+        x_dir = random.random() * self.unitSpeed
+        y_dir = math.sqrt(pow(self.unitSpeed, 2) - pow(x_dir, 2))
         if random.random() > 0.5 :
             x_dir *= -1
         if random.random() > 0.5:
@@ -110,3 +112,22 @@ class Ball(QGraphicsEllipseItem):
             else:
                 r, g, b = 255-value, 0, 255-value
         return r, g, b
+    
+    def mousePressEvent(self, event):
+        if event.button() == 1:
+            times = pow(self.unitSpeed, 2) / (pow(self.x_dir, 2) + pow(self.y_dir, 2))
+            self.x_dir += times * self.x_dir
+            self.y_dir += times * self.y_dir
+            super().mousePressEvent(event)
+        else:
+            super().mousePressEvent(event)
+            
+    def contains(self, point):
+        rect = self.boundingRect()
+        radius = rect.width() / 2
+
+        # distance to center of circle
+        distance = math.sqrt((point.x() - self.x() -radius)**2 + (point.y() - self.y() - radius)**2)
+
+        # return if in circle
+        return distance <= radius
