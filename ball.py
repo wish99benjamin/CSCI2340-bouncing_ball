@@ -145,12 +145,8 @@ class Ball(QGraphicsEllipseItem):
         # if colliding => fusion
         itemList = self.collidingItems()
 
-        if len(itemList) > 0:
-            print("Yes")
-
         # check if self is the largest one colliding (only deal with largest one)
         for idx in range(len(itemList)-1, -1, -1):
-            print(itemList[idx].x(), itemList[idx].y(), itemList[idx].size, self.x(), self.y(), self.size)
             if itemList[idx] and isinstance(itemList[idx], Ball) and self.size < itemList[idx].size:
                 return
             
@@ -158,6 +154,18 @@ class Ball(QGraphicsEllipseItem):
             if itemList[idx] and isinstance(itemList[idx], Ball) and \
                 self.overlaps(itemList[idx].x(), itemList[idx].y(), itemList[idx].size):
                     itemList[idx].setVisible(False)
+
+                    # adjust speed
+                    self.x_dir = ((self.size / itemList[idx].size) * self.x_dir + itemList[idx].x_dir) / (self.size / itemList[idx].size)
+                    self.y_dir = ((self.size / itemList[idx].size) * self.y_dir + itemList[idx].y_dir) / (self.size / itemList[idx].size)
+                    if (self.x_dir)**2 + (self.y_dir)**2 == 0:
+                        self.x_dir = random.random() * self.unitSpeed
+                        self.y_dir = math.sqrt(pow(self.unitSpeed, 2) - pow(x_dir, 2))
+                    elif ((self.x_dir)**2 + (self.y_dir)**2) < (self.unitSpeed)**2:
+                        times = (self.unitSpeed)**2 / ((self.x_dir)**2 + (self.y_dir)**2)
+                        self.x_dir = times * self.x_dir
+                        self.y_dir = times * self.y_dir
+
                     self.size += itemList[idx].size
                     self.life = (self.life + itemList[idx].life)/2
                     x, y = self.x(), self.y()
