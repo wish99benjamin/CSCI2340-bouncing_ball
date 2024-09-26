@@ -51,14 +51,13 @@ class Ball(QGraphicsEllipseItem):
 
         self.life += 1
         if self.life >= 1275:
-            # ball = Ball(820, 640)
-            # self.scene().addItem(ball)
-            self.scene().removeItem(self)
-            del self
+            self.removeSelf()
         else:
             r, g, b= self.color()
             brush = QBrush(QColor(r, g, b))  # RGB 顏色
             self.setBrush(brush)
+
+        self.checkColliding()
     
     def updatePos(self, sceneRect):
         new_x, new_y = self.x()+self.x_dir, self.y()+self.y_dir 
@@ -87,6 +86,12 @@ class Ball(QGraphicsEllipseItem):
             self.y_dir *= -1
 
         return new_x, new_y
+    
+    def removeSelf(self):
+        # ball = Ball(820, 640)
+        # self.scene().addItem(ball)
+        self.scene().removeItem(self)
+        del self
     
     def color(self):
         # 255, 255, 255 white  0
@@ -119,15 +124,43 @@ class Ball(QGraphicsEllipseItem):
             self.x_dir += times * self.x_dir
             self.y_dir += times * self.y_dir
             super().mousePressEvent(event)
+        elif event.button() == 2:
+            self.removeSelf()
         else:
             super().mousePressEvent(event)
-            
-    def contains(self, point):
-        rect = self.boundingRect()
-        radius = rect.width() / 2
 
+    def contains(self, point):
         # distance to center of circle
-        distance = math.sqrt((point.x() - self.x() -radius)**2 + (point.y() - self.y() - radius)**2)
+        distance = math.sqrt((point.x() - self.x() - self.size/2)**2 + (point.y() - self.y() - self.size/2)**2)
 
         # return if in circle
-        return distance <= radius
+        return distance <= self.size
+    
+    def overlaps(self, x, y, size):
+        distance = math.sqrt((x + size - self.x() - self.size/2)**2 + (y + size - self.y() - self.size/2)**2)
+
+        return distance <= self.size + size
+
+    def checkColliding(self):
+        # if colliding => fusion
+        itemList = self.collidingItems()
+
+        if len(itemList) > 0:
+            print("Yes")
+
+        # check if self is the largest one colliding (only deal with largest one)
+        for idx in range(len(itemList)-1, -1, -1):
+            print(itemList[idx].x(), itemList[idx].y(), itemList[idx].size, self.x(), self.y(), self.size)
+            if itemList[idx] and isinstance(itemList[idx], Ball) and self.size < itemList[idx].size:
+                return
+            
+        for idx in range(len(itemList)-1, -1, -1):
+            if itemList[idx] and isinstance(itemList[idx], Ball) and \
+                self.overlaps(itemList[idx].x(), itemList[idx].y(), itemList[idx].size):
+                    itemList[idx].setVisible(False)
+                    self.size += itemList[idx].size
+                    self.life = (self.life + itemList[idx].life)/2
+                    x, y = self.x(), self.y()
+                    self.setRect(0, 0, self.size, self.size)
+                    self.setPos(x - itemList[idx].size/2, y - itemList[idx].size/2)
+                    itemList[idx].removeSelf()
