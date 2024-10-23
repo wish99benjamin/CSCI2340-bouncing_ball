@@ -27,7 +27,12 @@ class WorkerThread(QThread):
     def updateDict(self):
         # 查找使用超過0.5%記憶體的進程
         self.my_dict = {}
+        count = 0
         for proc in psutil.process_iter(['pid', 'name', 'memory_info']):
+            count += 1
+            if count == 10:
+                time.sleep(0.001)
+                count = 0
             try:
                 process_info = proc.info
                 if process_info['memory_info'].rss > self.memory_threshold:
@@ -35,8 +40,7 @@ class WorkerThread(QThread):
             # 處理無法訪問的進程
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass
-
-
+            # pass
 
 class MainWindow(QGraphicsView):
     def __init__(self):
@@ -53,7 +57,6 @@ class MainWindow(QGraphicsView):
 
         self.memory_total = psutil.virtual_memory().total
         self.memory_threshold = self.memory_total* 0.005
-        self.my_dict = {}
 
         self.setBackgroundBrush(QColor(230, 230, 230))
         self.createScene()
@@ -64,18 +67,18 @@ class MainWindow(QGraphicsView):
         self.timer.start(5000)
 
     def createScene(self):
-        self.my_dict = {}
+        my_dict = {}
         for proc in psutil.process_iter(['pid', 'name', 'memory_info']):
             try:
                 process_info = proc.info
                 if process_info['memory_info'].rss > self.memory_threshold:
-                    self.my_dict[process_info['pid']] = [process_info['name'], process_info['memory_info'].rss / self.memory_total]
+                    my_dict[process_info['pid']] = [process_info['name'], process_info['memory_info'].rss / self.memory_total]
             # precess that can't be visited
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass  
 
         self.scene = QGraphicsScene()
-        for key, value in self.my_dict.items():
+        for key, value in my_dict.items():
             self.addBall(key, value[0], value[1])
         self.setScene(self.scene)
         self.scene.setSceneRect(0, 0, 3*self.unit_width-2, 3*self.unit_height-62)
@@ -86,7 +89,6 @@ class MainWindow(QGraphicsView):
         self.worker.start()
 
     def updateBall(self, data):
-        self.my_dict = data
         for item in self.scene.items():
             if isinstance(item, Ball):
                 if item.getP_Id() in data:
@@ -94,7 +96,7 @@ class MainWindow(QGraphicsView):
                     del data[item.getP_Id()]
                 else:
                     item.removeSelf()
-        for key, value in self.my_dict.items():
+        for key, value in data.items():
             self.addBall(key, value[0], value[1])
 
 
